@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Design tokens sampled from Figma screenshots.
+  Update these if your Figma file uses different Dev Mode values.
+*/
+:root {
+  --capstone-red: #c80f2f;
+  --capstone-red-dark: #ba162f;
+  --capstone-red-light: #fee8ea;
+  --capstone-red-chip: #fee8ea;
+  --capstone-page: #f9fafc;
+  --capstone-border: #ededed;
+  --capstone-text: #1f2937;
+  --capstone-text-muted: #6b7280;
+  --capstone-green-bg: #ecfdf3;
+  --capstone-green-text: #067647;
+}
+
+body {
+  @apply bg-white text-capstone-text antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+@layer base {
+  a,
+  button,
+  input,
+  select {
+    @apply focus:outline-none focus-visible:outline-none;
+  }
+}
