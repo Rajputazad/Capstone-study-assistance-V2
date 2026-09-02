@@ -87,41 +87,41 @@ def send_reset_email(to_email: str, otp: str) -> None:
     print(f"[auth] reset OTP email accepted by {config.SMTP_HOST} for {to_email}")
 
 
+async def find_account_by_email(db, email: str):
+    student_first = "@student." in email or email.endswith("@student.swin.edu.au")
+    collections = [("students", "Student"), ("admins", "Admin")]
+    if not student_first:
+        collections.reverse()
+
+    for collection_name, role in collections:
+        account = await db[collection_name].find_one({"email": email})
+        if account:
+            return account, role
+
+    return None, None
+
+
 @router.post("/login")
 async def login(body: LoginBody):
     db = get_db()
     email = body.email.lower()
-    admin = await db.admins.find_one({"email": email})
+    account, role = await find_account_by_email(db, email)
 
-    if admin:
-        if not check_password(body.password, admin.get("passwordHash", "")):
-            raise HTTPException(status_code=401, detail="Invalid email or password")
-        if admin.get("status") != "Active":
-            raise HTTPException(status_code=403, detail="This account is inactive")
-
-        now = utcnow()
-        await db.admins.update_one({"_id": admin["_id"]}, {"$set": {"lastLogin": now, "updatedAt": now}})
-        admin["lastLogin"] = now
-        admin["updatedAt"] = now
-
-        token = sign_token(sub=str(admin["_id"]), email=admin["email"], role="Admin")
-        user = to_json(admin)
-        return {"token": token, "role": "Admin", "user": user, "admin": user}
-
-    student = await db.students.find_one({"email": email})
-    if not student or not check_password(body.password, student.get("passwordHash", "")):
+    if not account or not check_password(body.password, account.get("passwordHash", "")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    if student.get("status") != "Active":
+    if account.get("status") != "Active":
         raise HTTPException(status_code=403, detail="This account is inactive")
 
     now = utcnow()
-    await db.students.update_one({"_id": student["_id"]}, {"$set": {"lastLogin": now, "updatedAt": now}})
-    student["lastLogin"] = now
-    student["updatedAt"] = now
+    collection_name = "admins" if role == "Admin" else "students"
+    await db[collection_name].update_one({"_id": account["_id"]}, {"$set": {"lastLogin": now, "updatedAt": now}})
+    account["lastLogin"] = now
+    account["updatedAt"] = now
 
-    token = sign_token(sub=str(student["_id"]), email=student["email"], role="Student")
-    user = to_json(student)
-    return {"token": token, "role": "Student", "user": user, "student": user}
+    token = sign_token(sub=str(account["_id"]), email=account["email"], role=role)
+    user = to_json(account)
+    key = "admin" if role == "Admin" else "student"
+    return {"token": token, "role": role, "user": user, key: user}
 
 
 @router.post("/register", status_code=201)
@@ -152,15 +152,11 @@ async def register(body: RegisterBody):
 
 
 @router.post("/forgot-password")
+@router.post("/forgot-password")
 async def forgot_password(body: ForgotPasswordBody):
     db = get_db()
     email = body.email.lower()
-    account = await db.admins.find_one({"email": email})
-    role = "Admin"
-
-    if not account:
-        account = await db.students.find_one({"email": email})
-        role = "Student"
+    account, role = await find_account_by_email(db, email)
 
     otp = None
 
