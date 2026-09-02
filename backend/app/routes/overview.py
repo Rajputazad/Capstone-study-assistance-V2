@@ -3,11 +3,11 @@ import asyncio
 
 from fastapi import APIRouter, Depends
 
-from ..auth import require_auth
+from ..auth import require_admin
 from ..db import get_db
 from ..serializers import to_json
 
-router = APIRouter(prefix="/overview", dependencies=[Depends(require_auth)])
+router = APIRouter(prefix="/overview", dependencies=[Depends(require_admin)])
 
 
 @router.get("")

@@ -12,6 +12,28 @@ class LoginBody(BaseModel):
     password: str = Field(min_length=1)
 
 
+class RegisterBody(BaseModel):
+    name: str = Field(min_length=1)
+    email: EmailStr
+    password: str = Field(min_length=6)
+    studentId: str = Field(min_length=1)
+    primaryUnit: str = Field(min_length=1)
+
+
+class ForgotPasswordBody(BaseModel):
+    email: EmailStr
+
+
+class VerifyResetOtpBody(BaseModel):
+    email: EmailStr
+    otp: str = Field(min_length=6, max_length=6)
+
+
+class ResetPasswordBody(BaseModel):
+    token: str = Field(min_length=1)
+    password: str = Field(min_length=6)
+
+
 class AdminCreate(BaseModel):
     name: str = Field(min_length=1)
     email: EmailStr
@@ -28,6 +50,7 @@ class StudentCreate(BaseModel):
     name: str = Field(min_length=1)
     studentId: str = Field(min_length=1)
     email: EmailStr
+    password: Optional[str] = Field(default=None, min_length=6)
     approvedUnits: Optional[list[str]] = None
     pendingUnits: Optional[list[str]] = None
     status: Optional[Status] = None

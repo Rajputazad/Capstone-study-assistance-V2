@@ -23,6 +23,7 @@ async def connect_db() -> AsyncIOMotorDatabase:
     await db.admins.create_index("email", unique=True)
     await db.students.create_index("studentId", unique=True)
     await db.students.create_index("email", unique=True)
+    await db.passwordresets.create_index("expiresAt", expireAfterSeconds=0)
     return db
 
 

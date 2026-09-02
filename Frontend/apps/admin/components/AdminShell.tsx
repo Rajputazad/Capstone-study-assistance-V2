@@ -52,8 +52,19 @@ export default function AdminShell({
       headers: { Authorization: `Bearer ${getToken()}` },
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setMe(data))
-      .catch(() => setMe(null));
+      .then((data) => {
+        if (data?.role !== "Admin") {
+          clearToken();
+          router.replace("/login");
+          return;
+        }
+
+        setMe(data.user);
+      })
+      .catch(() => {
+        clearToken();
+        router.replace("/login");
+      });
 
     fetchOverview()
       .then((data) => setPending(data.pendingRequests))
@@ -62,6 +73,10 @@ export default function AdminShell({
 
   function signOut() {
     clearToken();
+    localStorage.removeItem("student_auth_token");
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("capstone_auth_role");
+    localStorage.removeItem("capstone_auth_user");
     router.replace("/login");
   }
 

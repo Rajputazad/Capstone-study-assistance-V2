@@ -3,12 +3,12 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..auth import require_auth
+from ..auth import require_admin
 from ..db import get_db
 from ..schemas import UnitRequestCreate, UnitRequestDecision
 from ..serializers import parse_object_id, to_json, utcnow
 
-router = APIRouter(prefix="/unit-requests", dependencies=[Depends(require_auth)])
+router = APIRouter(prefix="/unit-requests", dependencies=[Depends(require_admin)])
 
 
 @router.get("")
@@ -57,7 +57,7 @@ async def create_request(body: UnitRequestCreate):
 
 
 @router.patch("/{request_id}")
-async def decide_request(request_id: str, body: UnitRequestDecision, payload: dict = Depends(require_auth)):
+async def decide_request(request_id: str, body: UnitRequestDecision, payload: dict = Depends(require_admin)):
     db = get_db()
     oid = parse_object_id(request_id)
 

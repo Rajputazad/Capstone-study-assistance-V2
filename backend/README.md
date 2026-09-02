@@ -35,13 +35,17 @@ Interactive API docs (new with FastAPI): http://localhost:8000/docs
 
 ## Endpoints
 
-All routes except `/health` and `/auth/login` need `Authorization: Bearer <token>`.
+All routes except `/health`, `/auth/login`, and `/auth/register` need `Authorization: Bearer <token>`.
 
 | Method | Route | Purpose |
 |---|---|---|
 | GET | `/health` | Liveness check |
-| POST | `/auth/login` | `{ email, password }` → `{ token, admin }` |
-| GET | `/auth/me` | Current admin |
+| POST | `/auth/login` | `{ email, password }` → `{ token, role, user }` |
+| POST | `/auth/register` | `{ name, email, password, studentId, primaryUnit }` → `{ token, role, user }` |
+| POST | `/auth/forgot-password` | `{ email }` → sends a 6-digit OTP using Gmail SMTP and stores it for 10 minutes |
+| POST | `/auth/verify-reset-otp` | `{ email, otp }` → verifies and deletes the OTP, then returns a short reset token |
+| POST | `/auth/reset-password` | `{ token, password }` → updates the account password |
+| GET | `/auth/me` | Current signed-in admin or student |
 | GET | `/overview` | Dashboard counters + recent requests |
 | GET | `/students` | `?search=&unit=&status=` |
 | GET | `/students/:id` | Single student |

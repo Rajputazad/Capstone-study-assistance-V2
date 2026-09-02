@@ -1,64 +1,38 @@
 "use client";
 
 import {
-  FormEvent,
-  useState,
+  useEffect,
 } from "react";
-
-import { login } from "@/lib/api";
 
 import {
   useRouter,
 } from "next/navigation";
+import { setToken } from "@/lib/api";
 
 export default function Login() {
-  const [email, setEmail] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
-
-  const [busy, setBusy] =
-    useState(false);
-
   const router =
     useRouter();
 
-  async function submit(
-    event: FormEvent
-  ) {
-    event.preventDefault();
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
 
-    if (
-      !email.trim() ||
-      !password.trim()
-    ) {
+    if (token) {
+      setToken(token);
+      localStorage.setItem("capstone_auth_role", "Admin");
+      router.replace("/");
       return;
     }
 
-    setBusy(true);
-    setError("");
+    const sharedLoginUrl =
+      process.env.NEXT_PUBLIC_SHARED_LOGIN_URL ?? "http://localhost:3000/login";
+    const adminUrl =
+      process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001";
 
-    try {
-      await login(
-        email.trim(),
-        password
-      );
-
-      router.push("/");
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Sign in failed"
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
+    window.location.replace(
+      `${sharedLoginUrl}?redirect=${encodeURIComponent(`${adminUrl}/login`)}`,
+    );
+  }, [router]);
 
   return (
     <div className="loginPage">
@@ -79,86 +53,16 @@ export default function Login() {
           </div>
         </div>
 
-        <form
+        <div
           className="loginCard"
-          onSubmit={submit}
         >
           <h1>
-            Sign in
+            Redirecting
           </h1>
 
           <p className="loginUniversity">
-            Swinburne University of Technology
+            Opening the shared Capstone sign in page...
           </p>
-
-          <div className="field">
-            <label>
-              Student / Staff Email
-            </label>
-
-            <input
-              type="email"
-              placeholder="you@student.edu.au"
-              value={email}
-              onChange={(event) =>
-                setEmail(
-                  event.target.value
-                )
-              }
-            />
-          </div>
-
-          <div className="field">
-            <label>
-              Password
-            </label>
-
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={
-                password
-              }
-              onChange={(event) =>
-                setPassword(
-                  event.target.value
-                )
-              }
-            />
-          </div>
-
-          <button
-            type="button"
-            className="forgot"
-          >
-            Forgot password?
-          </button>
-
-          {error && (
-            <p className="loginError">
-              {error}
-            </p>
-          )}
-
-          <button
-            className="signBtn"
-            type="submit"
-            disabled={busy}
-          >
-            {busy
-              ? "Signing in..."
-              : "Sign In"}
-          </button>
-        </form>
-
-        <div className="demoBox">
-          <strong>
-            Demo credentials
-          </strong>
-
-          <span>
-            Admin: admin@capstone.edu.au / Admin@123
-          </span>
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ import type {
 } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const TOKEN_KEY = "admin_token";
+const TOKEN_KEY = "capstone_auth_token";
 
 export const getToken = () =>
   typeof window === "undefined" ? null : localStorage.getItem(TOKEN_KEY);
@@ -79,6 +79,12 @@ function formatDate(value: string | null | undefined): string {
 
 type RawRequest = Omit<UnitAccessRequest, "requestedAt"> & { requestedAt: string };
 type RawAdmin = Omit<AdminUser, "lastLogin"> & { lastLogin: string | null };
+type AuthLoginResponse = {
+  token: string;
+  role: "Admin" | "Student";
+  user: RawAdmin;
+  admin?: RawAdmin;
+};
 
 const normaliseRequest = (r: RawRequest): UnitAccessRequest => ({
   ...r,
@@ -93,13 +99,17 @@ const normaliseAdmin = (a: RawAdmin): AdminUser => ({
 /* ---------------- Auth ---------------- */
 
 export async function login(email: string, password: string): Promise<AdminUser> {
-  const data = await post<{ token: string; admin: RawAdmin }>("/auth/login", {
+  const data = await post<AuthLoginResponse>("/auth/login", {
     email,
     password,
   });
 
+  if (data.role !== "Admin") {
+    throw new ApiError(403, "Please sign in with an admin account");
+  }
+
   setToken(data.token);
-  return normaliseAdmin(data.admin);
+  return normaliseAdmin(data.admin ?? data.user);
 }
 
 export function logout() {

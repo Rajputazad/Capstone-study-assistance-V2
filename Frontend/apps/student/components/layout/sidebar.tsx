@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   AiAssistantIcon,
   ProfileIcon,
   UnitResourcesIcon,
 } from "@/components/icons";
 import { useStudent } from "@/lib/student-context";
+import { clearAuthToken } from "@/lib/auth";
 
 const navItems = [
   { href: "/", label: "AI Assistant", Icon: AiAssistantIcon },
@@ -22,7 +23,15 @@ function isActivePath(pathname: string, href: string) {
 
 export function StudentSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { profile, approvedUnits } = useStudent();
+
+  function signOut() {
+    clearAuthToken();
+    localStorage.removeItem("capstone_auth_role");
+    localStorage.removeItem("capstone_auth_user");
+    router.replace("/login");
+  }
 
   return (
     <aside className="flex w-[210px] shrink-0 flex-col border-r border-capstone-border bg-white">
@@ -96,9 +105,10 @@ export function StudentSidebar() {
         </div>
         <button
           type="button"
-          className="mt-2.5 text-left text-[9px] leading-snug text-gray-400 hover:text-gray-600"
+          onClick={signOut}
+          className="mt-2.5 text-left text-[11px] font-semibold leading-snug text-capstone-red hover:text-capstone-red-dark"
         >
-          Do not sell or share my personal info
+          Sign out
         </button>
       </div>
     </aside>

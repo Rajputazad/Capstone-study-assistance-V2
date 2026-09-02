@@ -4,12 +4,12 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from ..auth import require_auth
+from ..auth import require_admin
 from ..db import get_db
 from ..schemas import ResourceCreate, ResourceUpdate
 from ..serializers import parse_object_id, to_json, utcnow
 
-router = APIRouter(prefix="/resources", dependencies=[Depends(require_auth)])
+router = APIRouter(prefix="/resources", dependencies=[Depends(require_admin)])
 
 
 @router.get("")
@@ -37,7 +37,7 @@ async def list_resources(
 
 
 @router.post("", status_code=201)
-async def create_resource(body: ResourceCreate, payload: dict = Depends(require_auth)):
+async def create_resource(body: ResourceCreate, payload: dict = Depends(require_admin)):
     db = get_db()
     now = utcnow()
     doc = {

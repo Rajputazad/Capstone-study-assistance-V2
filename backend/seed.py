@@ -55,7 +55,10 @@ async def seed() -> None:
         "updatedAt": now,
     })
 
-    student_docs = [{**s, "createdAt": now, "updatedAt": now} for s in STUDENTS]
+    student_docs = [
+        {**s, "passwordHash": hash_password("Student@123"), "role": "Student", "lastLogin": None, "createdAt": now, "updatedAt": now}
+        for s in STUDENTS
+    ]
     await db.students.insert_many(student_docs)
     created_students = await db.students.find().to_list(length=None)
 
@@ -84,6 +87,7 @@ async def seed() -> None:
 
     print("[seed] done")
     print(f"[seed] admin login -> {email} / {password}")
+    print("[seed] student login -> jordan.tan@student.edu.au / Student@123")
     await close_db()
 
 

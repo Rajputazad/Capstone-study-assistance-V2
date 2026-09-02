@@ -4,12 +4,13 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from ..auth import require_auth
+from ..auth import require_admin
 from ..db import get_db
 from ..schemas import StudentCreate, StudentUpdate, UnitActionBody
 from ..serializers import parse_object_id, to_json, utcnow
+from .auth import hash_password
 
-router = APIRouter(prefix="/students", dependencies=[Depends(require_auth)])
+router = APIRouter(prefix="/students", dependencies=[Depends(require_admin)])
 
 
 @router.get("")
@@ -46,6 +47,8 @@ async def create_student(body: StudentCreate):
         "name": body.name,
         "studentId": body.studentId,
         "email": body.email.lower(),
+        "passwordHash": hash_password(body.password) if body.password else "",
+        "role": "Student",
         "approvedUnits": body.approvedUnits or [],
         "pendingUnits": body.pendingUnits or [],
         "status": body.status or "Active",

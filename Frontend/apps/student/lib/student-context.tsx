@@ -48,6 +48,13 @@ interface PersistedState {
   selectedChatId: string | null;
 }
 
+type StoredAuthUser = {
+  name?: string;
+  email?: string;
+  studentId?: string;
+  approvedUnits?: string[];
+};
+
 const StudentContext = createContext<StudentContextValue | null>(null);
 
 function loadPersistedState(fallbackActiveUnit: string): PersistedState {
@@ -88,8 +95,57 @@ function loadPersistedState(fallbackActiveUnit: string): PersistedState {
   }
 }
 
+function loadAuthStudent() {
+  if (typeof window === "undefined") {
+    return {
+      profile: studentProfile,
+      approvedUnits: initialApprovedUnits,
+    };
+  }
+
+  try {
+    const raw = localStorage.getItem("capstone_auth_user");
+    if (!raw) {
+      return {
+        profile: studentProfile,
+        approvedUnits: initialApprovedUnits,
+      };
+    }
+
+    const user = JSON.parse(raw) as StoredAuthUser;
+    const units = user.approvedUnits?.length
+      ? user.approvedUnits.map((code) => ({
+          code,
+          name: getUnitName(code),
+          status: "Approved" as const,
+        }))
+      : initialApprovedUnits;
+
+    return {
+      profile: {
+        name: user.name || studentProfile.name,
+        email: user.email || studentProfile.email,
+        studentId: user.studentId || studentProfile.studentId,
+        initials: (user.name || studentProfile.name)
+          .split(" ")
+          .map((part) => part[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase(),
+      },
+      approvedUnits: units,
+    };
+  } catch {
+    return {
+      profile: studentProfile,
+      approvedUnits: initialApprovedUnits,
+    };
+  }
+}
+
 export function StudentProvider({ children }: { children: ReactNode }) {
-  const [approvedUnits] = useState<ApprovedUnit[]>(initialApprovedUnits);
+  const [profile, setProfile] = useState<StudentProfile>(studentProfile);
+  const [approvedUnits, setApprovedUnits] = useState<ApprovedUnit[]>(initialApprovedUnits);
   const approvedUnitCodes = useMemo(
     () => approvedUnits.map((unit) => unit.code),
     [approvedUnits],
@@ -104,16 +160,21 @@ export function StudentProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    const authStudent = loadAuthStudent();
+    setProfile(authStudent.profile);
+    setApprovedUnits(authStudent.approvedUnits);
+
     const persisted = loadPersistedState(defaultActiveUnit);
+    const loadedUnitCodes = authStudent.approvedUnits.map((unit) => unit.code);
     setPendingRequests(persisted.pendingRequests);
     setChats(persisted.chats);
     setActiveUnitState(
-      persisted.activeUnit && approvedUnitCodes.includes(persisted.activeUnit)
+      persisted.activeUnit && loadedUnitCodes.includes(persisted.activeUnit)
         ? persisted.activeUnit
         : "",
     );
     setSelectedChatId(persisted.selectedChatId);
-  }, [approvedUnitCodes, defaultActiveUnit]);
+  }, []);
 
   useEffect(() => {
     const payload: PersistedState = {
@@ -228,6 +289,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
       getUnitName,
     }),
     [
+      profile,
       approvedUnits,
       pendingRequests,
       approvedUnitCodes,

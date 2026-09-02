@@ -1,13 +1,13 @@
 """/admins CRUD — mirrors routes/admins.ts."""
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from ..auth import require_auth
+from ..auth import require_admin
 from ..db import get_db
 from ..schemas import AdminCreate, AdminUpdate
 from ..serializers import parse_object_id, to_json, utcnow
 from .auth import hash_password
 
-router = APIRouter(prefix="/admins", dependencies=[Depends(require_auth)])
+router = APIRouter(prefix="/admins", dependencies=[Depends(require_admin)])
 
 
 @router.get("")
@@ -74,7 +74,7 @@ async def toggle_admin(admin_id: str):
 
 
 @router.delete("/{admin_id}", status_code=204)
-async def delete_admin(admin_id: str, payload: dict = Depends(require_auth)):
+async def delete_admin(admin_id: str, payload: dict = Depends(require_admin)):
     if admin_id == payload["sub"]:
         raise HTTPException(status_code=400, detail="You cannot delete your own account")
 
